@@ -1,12 +1,12 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { addToQueue } from '@/lib/offlineQueue'
 import { translations, Lang } from '@/lib/i18n'
 
-export default function StartTrip() {
+function StartTripForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [lang, setLang] = useState<Lang>('id')
@@ -20,7 +20,6 @@ export default function StartTrip() {
 
   useEffect(() => {
     setMounted(true)
-    // Set today's date only on client to avoid SSR mismatch
     setForm(f => ({ ...f, excavation_date: new Date().toISOString().split('T')[0] }))
     const l = searchParams.get('lang') as Lang
     if (l === 'en' || l === 'id') {
@@ -157,5 +156,13 @@ export default function StartTrip() {
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
+  )
+}
+
+export default function StartTrip() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+      <StartTripForm />
+    </Suspense>
   )
 }

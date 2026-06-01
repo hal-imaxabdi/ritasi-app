@@ -1,11 +1,11 @@
 {
   "name": "Ritasi App",
   "short_name": "Ritasi",
-  "description": "Pencatatan perjalanan truk digital",
+  "description": "Digital truck trip recording system",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f9fafb",
-  "theme_color": "#15803d",
+  "background_color": "#0f1117",
+  "theme_color": "#22c55e",
   "orientation": "portrait",
   "icons": [
     {

@@ -1,26 +1,45 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { addToQueue } from '@/lib/offlineQueue'
+import { translations, Lang } from '@/lib/i18n'
 
 export default function FinishTrip() {
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
   const searchParams = useSearchParams()
-  const isOffline = searchParams.get('offline') === 'true'
 
+  const [lang, setLang] = useState<Lang>('id')
+  const [mounted, setMounted] = useState(false)
+  const [isOffline, setIsOffline] = useState(false)
   const [loading, setLoading] = useState(false)
   const [photo, setPhoto] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null)
   const [gpsLoading, setGpsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [form, setForm] = useState({ project_name: '', destination_location: '' })
 
-  const [form, setForm] = useState({
-    project_name: '',
-    destination_location: '',
-  })
+  useEffect(() => {
+    setMounted(true)
+    setIsOffline(searchParams.get('offline') === 'true')
+    const l = searchParams.get('lang') as Lang
+    if (l === 'en' || l === 'id') {
+      setLang(l)
+    } else {
+      const saved = localStorage.getItem('ritasi_lang') as Lang
+      if (saved === 'en' || saved === 'id') setLang(saved)
+    }
+  }, [searchParams])
+
+  function toggleLang(l: Lang) {
+    setLang(l)
+    localStorage.setItem('ritasi_lang', l)
+  }
+
+  const t = translations[lang]
 
   function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -37,7 +56,9 @@ export default function FinishTrip() {
         setGpsLoading(false)
       },
       () => {
-        alert('Tidak bisa mendapat lokasi GPS. Pastikan izin lokasi aktif.')
+        alert(lang === 'id'
+          ? 'Tidak bisa mendapat lokasi GPS. Pastikan izin lokasi aktif.'
+          : 'Cannot get GPS location. Please ensure location permission is enabled.')
         setGpsLoading(false)
       }
     )
@@ -45,8 +66,8 @@ export default function FinishTrip() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!photo) return alert('Foto bukti bongkar wajib diisi!')
-    if (!gps) return alert('GPS wajib diambil terlebih dahulu!')
+    if (!photo) return alert(lang === 'id' ? 'Foto bukti wajib diisi!' : 'Proof photo is required!')
+    if (!gps) return alert(lang === 'id' ? 'GPS wajib diambil terlebih dahulu!' : 'GPS location must be captured first!')
     setLoading(true)
 
     try {
@@ -56,9 +77,7 @@ export default function FinishTrip() {
         .upload(fileName, photo)
       if (uploadError) throw uploadError
 
-      const { data: urlData } = supabase.storage
-        .from('trip-photos')
-        .getPublicUrl(fileName)
+      const { data: urlData } = supabase.storage.from('trip-photos').getPublicUrl(fileName)
 
       const updates = {
         ...form,
@@ -73,65 +92,145 @@ export default function FinishTrip() {
       const { error } = await supabase.from('trips').update(updates).eq('id', id)
       if (error) throw error
 
-      alert('✅ Perjalanan selesai dicatat!')
+      alert(lang === 'id' ? '✅ Perjalanan selesai dicatat!' : '✅ Trip successfully recorded!')
       router.push('/')
     } catch {
       addToQueue({ type: 'complete_trip', payload: { tripId: id, ...form, status: 'completed' } })
-      alert('Offline: Data tersimpan lokal.')
+      alert(lang === 'id' ? 'Offline: Data tersimpan lokal.' : 'Offline: Data saved locally.')
       router.push('/')
     } finally {
       setLoading(false)
     }
   }
 
+  const canSubmit = photo && gps && form.project_name && form.destination_location
+
+  if (!mounted) return null
+
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-sm mx-auto">
-        <h1 className="text-2xl font-bold text-green-700 mb-2">📦 Selesai Bongkar</h1>
-        {isOffline && (
-          <div className="bg-yellow-100 text-yellow-800 text-sm rounded-xl p-3 mb-4">
-            ⚠️ Mode offline aktif
+    <div className="page">
+      <nav className="topnav">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: 20 }}>←</span>
+            <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>🚛 {t.appName}</span>
+          </Link>
+        </div>
+        <div className="lang-toggle">
+          <button className={`lang-btn ${lang === 'id' ? 'active' : ''}`} onClick={() => toggleLang('id')}>ID</button>
+          <button className={`lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => toggleLang('en')}>EN</button>
+        </div>
+      </nav>
+
+      <div className="mobile-container" style={{ paddingTop: 28 }}>
+        <div className="animate-fade-up-1" style={{ marginBottom: 28 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            background: 'var(--accent-glow)', border: '1px solid rgba(34,197,94,0.2)',
+            borderRadius: 99, padding: '4px 12px', marginBottom: 14
+          }}>
+            <div style={{ width: 8, height: 8, background: 'var(--accent)', borderRadius: '50%' }}></div>
+            <span style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600 }}>
+              {t.finishTripSubtitle}
+            </span>
           </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Nama Proyek</label>
-            <input required className="mt-1 w-full border rounded-xl px-4 py-3"
-              value={form.project_name}
-              onChange={e => setForm({ ...form, project_name: e.target.value })}
-              placeholder="Proyek Gedung ABC" />
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--text)' }}>
+            {t.finishTripTitle}
+          </h1>
+          {isOffline && (
+            <div style={{
+              marginTop: 12, background: 'var(--amber-dim)', border: '1px solid rgba(245,158,11,0.2)',
+              borderRadius: 'var(--radius-sm)', padding: '8px 12px', fontSize: 13, color: 'var(--amber)'
+            }}>
+              {t.offlineNotice}
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="card animate-fade-up-2" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label className="label">{t.projectName}</label>
+              <input
+                required
+                className="input"
+                value={form.project_name}
+                onChange={e => setForm({ ...form, project_name: e.target.value })}
+                placeholder={t.projectPlaceholder}
+              />
+            </div>
+            <div>
+              <label className="label">{t.destinationLocation}</label>
+              <input
+                required
+                className="input"
+                value={form.destination_location}
+                onChange={e => setForm({ ...form, destination_location: e.target.value })}
+                placeholder={t.destinationPlaceholder}
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Lokasi Tujuan (Urugan)</label>
-            <input required className="mt-1 w-full border rounded-xl px-4 py-3"
-              value={form.destination_location}
-              onChange={e => setForm({ ...form, destination_location: e.target.value })}
-              placeholder="Jl. Tujuan No. 2" />
-          </div>
-          <button type="button" onClick={captureGPS} disabled={gpsLoading}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold disabled:opacity-50">
-            {gpsLoading ? '📡 Mengambil GPS...' : gps
-              ? `✅ GPS: ${gps.lat.toFixed(4)}, ${gps.lng.toFixed(4)}`
-              : '📍 Ambil Lokasi GPS'}
-          </button>
-          <div>
-            <input type="file" accept="image/*" capture="environment"
-              ref={fileInputRef} className="hidden" onChange={handlePhotoCapture} />
-            <button type="button" onClick={() => fileInputRef.current?.click()}
-              className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold">
-              📷 {photo ? 'Ganti Foto Bukti' : 'Ambil Foto Bukti Bongkar'}
+
+          <div className="card animate-fade-up-3">
+            <label className="label">📍 GPS</label>
+            <button type="button" onClick={captureGPS} disabled={gpsLoading}
+              className="btn btn-secondary" style={{ marginTop: 4 }}>
+              {gpsLoading
+                ? t.capturingGPS
+                : gps
+                  ? `${t.gpsOk} — ${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}`
+                  : t.captureGPS}
             </button>
-            {photoPreview && (
-              <img src={photoPreview} alt="preview"
-                className="mt-2 rounded-xl w-full object-cover max-h-48" />
+            {gps && (
+              <div className="gps-box" style={{ marginTop: 10 }}>
+                lat: {gps.lat.toFixed(6)}<br />
+                lng: {gps.lng.toFixed(6)}
+              </div>
             )}
           </div>
-          <button type="submit" disabled={loading}
-            className="w-full bg-green-600 text-white py-4 rounded-2xl font-bold text-lg disabled:opacity-50">
-            {loading ? 'Menyimpan...' : '✅ Konfirmasi Selesai'}
-          </button>
+
+          <div className="card animate-fade-up-3">
+            <label className="label">📷 {lang === 'id' ? 'Foto Bukti' : 'Proof Photo'}</label>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={handlePhotoCapture}
+            />
+            <button type="button" onClick={() => fileInputRef.current?.click()}
+              className="btn btn-secondary" style={{ marginTop: 4 }}>
+              {photo ? `✅ ${t.changePhoto}` : t.takePhoto}
+            </button>
+            {photoPreview && (
+              <img src={photoPreview} alt="preview" className="photo-preview" />
+            )}
+          </div>
+
+          <div className="animate-fade-up-4">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading || !canSubmit}
+              style={{ opacity: canSubmit ? 1 : 0.4 }}
+            >
+              {loading
+                ? <><span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⟳</span> {t.saving}</>
+                : t.confirmComplete}
+            </button>
+            {!canSubmit && (
+              <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-dim)', marginTop: 8 }}>
+                {lang === 'id'
+                  ? 'Lengkapi semua field, GPS, dan foto untuk melanjutkan'
+                  : 'Complete all fields, GPS and photo to continue'}
+              </p>
+            )}
+          </div>
         </form>
       </div>
-    </main>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
   )
 }

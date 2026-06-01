@@ -105,24 +105,24 @@ export default function FinishTrip() {
 
   const canSubmit = photo && gps && form.project_name && form.destination_location
 
-  if (!mounted) return null
-
   return (
-    <div className="page">
+    <div className="page" suppressHydrationWarning>
       <nav className="topnav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: 'var(--text-muted)', fontSize: 20 }}>←</span>
-            <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>🚛 {t.appName}</span>
+            <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>
+              🚛 {mounted ? t.appName : 'Ritasi'}
+            </span>
           </Link>
         </div>
-        <div className="lang-toggle">
+        <div className="lang-toggle" style={{ visibility: mounted ? 'visible' : 'hidden' }}>
           <button className={`lang-btn ${lang === 'id' ? 'active' : ''}`} onClick={() => toggleLang('id')}>ID</button>
           <button className={`lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => toggleLang('en')}>EN</button>
         </div>
       </nav>
 
-      <div className="mobile-container" style={{ paddingTop: 28 }}>
+      <div className="mobile-container" style={{ paddingTop: 28, visibility: mounted ? 'visible' : 'hidden' }}>
         <div className="animate-fade-up-1" style={{ marginBottom: 28 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,

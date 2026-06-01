@@ -73,26 +73,26 @@ export default function AdminDashboard() {
     done: trips.filter(t => t.status === 'completed').length,
   }
 
-  if (!mounted) return null
-
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }} suppressHydrationWarning>
       <nav className="topnav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: 'var(--text-muted)', fontSize: 20 }}>←</span>
-            <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>🚛 {t.appName}</span>
+            <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>
+              🚛 {mounted ? t.appName : 'Ritasi'}
+            </span>
           </Link>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div className="lang-toggle">
+          <div className="lang-toggle" style={{ visibility: mounted ? 'visible' : 'hidden' }}>
             <button className={`lang-btn ${lang === 'id' ? 'active' : ''}`} onClick={() => toggleLang('id')}>ID</button>
             <button className={`lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => toggleLang('en')}>EN</button>
           </div>
         </div>
       </nav>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 20px 60px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 20px 60px', visibility: mounted ? 'visible' : 'hidden' }}>
         <div className="animate-fade-up-1" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, gap: 16, flexWrap: 'wrap' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>

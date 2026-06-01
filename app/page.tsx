@@ -39,16 +39,10 @@ export default function Home() {
 
   const t = translations[lang]
 
-  if (!mounted) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 32, height: 32, background: 'var(--accent)', borderRadius: 8, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🚛</div>
-      </div>
-    )
-  }
-
+  // Always render the same structure — no early null return.
+  // Hide content with opacity/visibility until mounted to avoid hydration mismatch.
   return (
-    <div className="page">
+    <div className="page" suppressHydrationWarning>
       <nav className="topnav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
@@ -57,16 +51,16 @@ export default function Home() {
             justifyContent: 'center', fontSize: 16
           }}>🚛</div>
           <span style={{ fontWeight: 700, fontSize: 17, color: 'var(--text)' }}>
-            {t.appName}
+            {mounted ? t.appName : 'Ritasi'}
           </span>
         </div>
-        <div className="lang-toggle">
+        <div className="lang-toggle" style={{ visibility: mounted ? 'visible' : 'hidden' }}>
           <button className={`lang-btn ${lang === 'id' ? 'active' : ''}`} onClick={() => toggleLang('id')}>ID</button>
           <button className={`lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => toggleLang('en')}>EN</button>
         </div>
       </nav>
 
-      <div className="mobile-container" style={{ paddingTop: 32 }}>
+      <div className="mobile-container" style={{ paddingTop: 32, visibility: mounted ? 'visible' : 'hidden' }}>
         <div className="animate-fade-up-1" style={{ marginBottom: 32 }}>
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 8 }}>
             v1.0 — MVP

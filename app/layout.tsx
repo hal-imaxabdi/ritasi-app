@@ -14,8 +14,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang="id" translate="no" suppressHydrationWarning>
       <head>
+        {/* Prevent Google Translate from rewriting the DOM (causes React removeChild crashes) */}
+        <meta name="google" content="notranslate" />
         <meta name="theme-color" content="#22c55e" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
